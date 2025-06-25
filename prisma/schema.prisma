@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,9 +7,170 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Device {
-  id        Int      @id @default(autoincrement())
+enum Role {
+  COACH
+  PLAYER
+  PARENT
+  REFEREE
+  PITCH_OWNER
+}
+
+enum AgeGroup {
+  U15
+  U16
+  U17
+  U18
+}
+
+enum Sport {
+  BASEBALL
+  BASKETBALL
+  CRICKET
+  FOOTBALL
+  FUTSAL
+  HANDBALL
+  HOCKEY
+  RUGBY
+  SOFTBALL
+  VOLLEYBALL
+  OTHER
+}
+
+enum Tier {
+  COMMUNITY
+  INSTITUTIONS
+  ACADEMY
+  PROFESSIONAL
+  OTHERS
+}
+
+model User {
+  id           String      @id @default(uuid())
+  firstName    String      @map("first_name")
+  lastName     String      @map("last_name")
+  email        String      @unique
+  password     String
+  imageUrl     String?     @map("image_url")
+  role         Role
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  pitchOwner   PitchOwner?
+  parent       Parent?
+  coachedTeams Team[]      @relation("TeamCoach")
+  otps         OTP[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model OTP {
+  id      String   @id @default(uuid())
+  code    String
+  userId  String   @map("user_id")
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiry  DateTime
+
+  @@index([userId])
+  @@index([expiry])
+  @@map("otps")
+}
+
+model Team {
+  id        String   @id @default(uuid())
   name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+  teamCode  String   @unique @map("team_code")
+  coachId   String   @map("coach_id")
+  coach     User     @relation(fields: [coachId], references: [id], name: "TeamCoach")
+  players   PlayerTeam[]
+  ageGroup  AgeGroup @map("age_group")
+  sport     Sport
+  tier      Tier
+  location  String?
+
+  @@index([coachId])
+  @@index([teamCode])
+  @@map("teams")
+}
+
+model Player {
+  id        String   @id @default(uuid())
+  fullName  String   @map("full_name")
+  age       Int
+  sport     Sport
+  imageUrl  String?  @map("image_url")
+  code      String   @unique
+  teams     PlayerTeam[]
+
+  @@index([code])
+  @@map("players")
+}
+
+// Explicit many-to-many for Player-Team relationship
+model PlayerTeam {
+  player    Player @relation(fields: [playerId], references: [id])
+  playerId  String @map("player_id")
+  team      Team   @relation(fields: [teamId], references: [id])
+  teamId    String @map("team_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  @@id([playerId, teamId])
+  @@map("player_teams")
+}
+
+model Parent {
+  id       String   @id @default(uuid())
+  userId   String   @unique @map("user_id")
+  user     User     @relation(fields: [userId], references: [id])
+  children Child[]
+
+  @@map("parents")
+}
+
+model Child {
+  id       String   @id @default(uuid())
+  fullName String   @map("full_name")
+  age      Int
+  sport    Sport
+  imageUrl String?  @map("image_url")
+  code     String   @unique
+  parentId String   @map("parent_id")
+  parent   Parent   @relation(fields: [parentId], references: [id])
+
+  @@index([parentId])
+  @@index([code])
+  @@map("children")
+}
+
+model RefereeCertification {
+  id           String   @id @default(uuid())
+  certification String
+  certificates String[] // Consider a separate table if complex querying needed
+
+  @@map("referee_certifications")
+}
+
+model PitchOwner {
+  id                     String   @id @default(uuid())
+  userId                 String   @unique @map("user_id")
+  user                   User     @relation(fields: [userId], references: [id])
+  verificationDocumentUrl String?  @map("verification_document_url")
+  facilities             PitchOwnerFacility[]
+
+  @@map("pitch_owners")
+}
+
+model PitchOwnerFacility {
+  id           String   @id @default(uuid())
+  name         String
+  address      String
+  description  String?
+  images       String[] // Consider a separate table if complex querying needed
+  pitchOwnerId String   @map("pitch_owner_id")
+  pitchOwner   PitchOwner @relation(fields: [pitchOwnerId], references: [id])
+
+  @@index([pitchOwnerId])
+  @@map("pitch_owner_facilities")
 }
