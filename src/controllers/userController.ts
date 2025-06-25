@@ -1,6 +1,7 @@
 import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
+import bcrypt from 'bcrypt';
 
 /**
  * @swagger
@@ -29,48 +30,8 @@ import prisma from '../config/prisma';
 
 export const getUsers = async (req: Request, res: Response) => {
     try {
-        // const users = await prisma.user.findMany();
-        res.json({});
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-};
-
-export const createUser = async (req: Request, res: Response) => {
-    try {
-        const { firstName, lastName, email, password, imageUrl, role } = req.body;
-
-        // Basic validation
-        if (!email || !password || !firstName || !lastName) {
-            return res.status(400).json({
-                error: 'Missing required fields: firstName, lastName, email, password'
-            });
-        }
-
-        // Check if email already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email }
-        });
-
-        if (existingUser) {
-            return res.status(409).json({
-                error: 'Email already in use'
-            });
-        }
-
-        // Create user with validated data
-        const user = await prisma.user.create({
-            data: {
-                firstName,
-                lastName,
-                email,
-                password, // Note: In production, you should hash the password first
-                imageUrl: imageUrl || null,
-                role: role || Role.PLAYER, // Default role
-                createdAt: new Date(),
-                updatedAt: new Date()
-            },
-            select: { // Only return these fields in response
+        const users = await prisma.user.findMany({
+            select: {
                 id: true,
                 firstName: true,
                 lastName: true,
@@ -80,25 +41,58 @@ export const createUser = async (req: Request, res: Response) => {
                 createdAt: true
             }
         });
+        res.json({ users });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+};
 
-        // Return success response
+export const createUser = async (req: Request, res: Response) => {
+    try {
+        const { firstName, lastName, email, password, imageUrl, role } = req.body;
+        if (!email || !password || !firstName || !lastName) {
+            return res.status(400).json({
+                error: 'Missing required fields: firstName, lastName, email, password'
+            });
+        }
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
+        if (existingUser) {
+            return res.status(409).json({
+                error: 'Email already in use'
+            });
+        }
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await prisma.user.create({
+            data: {
+                firstName,
+                lastName,
+                email,
+                password: hashedPassword,
+                imageUrl: imageUrl || null,
+                role: role || Role.PLAYER
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                imageUrl: true,
+                role: true,
+                createdAt: true
+            }
+        });
         res.status(201).json({
             message: 'User created successfully',
             user
         });
-
     } catch (error) {
         console.error('Error creating user:', error);
-
-        if (error instanceof Error) {
-            res.status(500).json({
-                error: 'Internal server error',
-                details: error.message
-            });
-        } else {
-            res.status(500).json({
-                error: 'Internal server error'
-            });
-        }
+        res.status(500).json({
+            error: 'Internal server error',
+            details: error instanceof Error ? error.message : undefined
+        });
     }
 };

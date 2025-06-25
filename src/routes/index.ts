@@ -9,7 +9,7 @@ import { joinTeam } from '../controllers/teamController';
 import { linkChild, createChild } from '../controllers/childController';
 import { addRefereeQualification } from '../controllers/refereeController';
 import { addFacility } from '../controllers/facilityController';
-import authMiddleware from '../middlewares/auth';
+import { authMiddleware } from '../middlewares/auth';
 
 const router = Router();
 

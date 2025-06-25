@@ -14,7 +14,6 @@ export const linkChild = async (req: Request, res: Response) => {
         const { code } = req.body;
         const parentId = req.user?.userId;
 
-        // Find child by code
         const child = await prisma.child.findUnique({
             where: { code }
         });
@@ -23,7 +22,6 @@ export const linkChild = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Child not found' });
         }
 
-        // Link child to parent
         await prisma.child.update({
             where: { id: child.id },
             data: { parentId }
@@ -41,7 +39,6 @@ export const createChild = async (req: Request, res: Response) => {
         const { fullName, age, sport } = req.body;
         const parentId = req.user?.userId;
 
-        // Generate unique code
         const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
         const child = await prisma.child.create({
@@ -49,7 +46,7 @@ export const createChild = async (req: Request, res: Response) => {
                 fullName,
                 age: parseInt(age),
                 sport: sport as Sport,
-                parentId,
+                ...(parentId ? { parentId } : {}),
                 code
             }
         });

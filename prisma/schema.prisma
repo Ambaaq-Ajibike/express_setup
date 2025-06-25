@@ -54,7 +54,7 @@ model User {
   role         Role
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
-
+  emailVerified Boolean     @default(false) @map("email_verified")
   // Relations
   pitchOwner   PitchOwner?
   parent       Parent?

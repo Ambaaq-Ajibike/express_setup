@@ -11,11 +11,16 @@ import prisma from '../config/prisma';
 
 export const addFacility = async (req: Request, res: Response) => {
     try {
-        const images = req.files as MulterFile[];
+        const { facilityName, address } = req.body;
+        if (!facilityName || !address) {
+            return res.status(400).json({ error: 'Missing required fields: facilityName, address' });
+        }
+        const images = req.files as MulterFile[] || [];
         const pitchOwnerId = req.user?.userId;
-
+        if (!pitchOwnerId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         const imageUrls = images.map(img => img.path);
-
         const facility = await prisma.pitchOwnerFacility.create({
             data: {
                 name: facilityName,
@@ -24,9 +29,7 @@ export const addFacility = async (req: Request, res: Response) => {
                 pitchOwnerId
             }
         });
-
         res.status(201).json({ facility });
-
     } catch (error) {
         res.status(500).json({ error: 'Failed to add facility' });
     }
