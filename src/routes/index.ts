@@ -1,36 +1,34 @@
 import { Router } from 'express';
-import { getUsers, createUser } from '../controllers/userController';
+import {
+    login,
+    register,
+    verifyEmail
+} from '../controllers/authController';
+// Ensure that 'register' is exported as a function like: export const register = async (req, res) => { ... }
+import { joinTeam } from '../controllers/teamController';
+import { linkChild, createChild } from '../controllers/childController';
+import { addRefereeQualification } from '../controllers/refereeController';
+import { addFacility } from '../controllers/facilityController';
+import authMiddleware from '../middlewares/auth';
 
 const router = Router();
 
-/**
- * @swagger
- * /users:
- *   get:
- *     summary: Get all users
- *     tags: [Users]
- *     responses:
- *       200:
- *         description: List of users
- */
-router.get('/users', getUsers);
+// Auth routes
+router.post('/login', login);
+router.post('/register', register);
+router.post('/verify-email', authMiddleware, verifyEmail);
 
-/**
- * @swagger
- * /users:
- *   post:
- *     summary: Create a new user
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/User'
- *     responses:
- *       201:
- *         description: User created successfully
- */
-router.post('/users', createUser);
+// Team routes
+router.post('/join-team', authMiddleware, joinTeam);
 
-export { router };
+// Child routes
+router.post('/link-child', authMiddleware, linkChild);
+router.post('/create-child', authMiddleware, createChild);
+
+// Referee routes
+router.post('/add-qualification', authMiddleware, addRefereeQualification);
+
+// Facility routes
+router.post('/add-facility', authMiddleware, addFacility);
+
+export default router;

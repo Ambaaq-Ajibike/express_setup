@@ -108,7 +108,6 @@ model Player {
   @@map("players")
 }
 
-// Explicit many-to-many for Player-Team relationship
 model PlayerTeam {
   player    Player @relation(fields: [playerId], references: [id])
   playerId  String @map("player_id")
@@ -147,7 +146,8 @@ model Child {
 model RefereeCertification {
   id           String   @id @default(uuid())
   certification String
-  certificates String[] // Consider a separate table if complex querying needed
+  certificates String[]
+  refereeId    String   @map("referee_id")
 
   @@map("referee_certifications")
 }
@@ -167,7 +167,7 @@ model PitchOwnerFacility {
   name         String
   address      String
   description  String?
-  images       String[] // Consider a separate table if complex querying needed
+  images       String[] 
   pitchOwnerId String   @map("pitch_owner_id")
   pitchOwner   PitchOwner @relation(fields: [pitchOwnerId], references: [id])
 
