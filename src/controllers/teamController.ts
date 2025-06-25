@@ -1,7 +1,6 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../types/express';
 import prisma from '../config/prisma';
-import '../types/express'; // Ensure the type augmentation is loaded
-
 
 /**
  * @swagger
@@ -10,35 +9,26 @@ import '../types/express'; // Ensure the type augmentation is loaded
  *   description: Team management endpoints
  */
 
-export const joinTeam = async (req: Request, res: Response) => {
+export const joinTeam = async (req: AuthenticatedRequest & { body: any }, res: Response): Promise<void> => {
     try {
         const { code } = req.body;
         const userId = req.user?.userId;
-
-        // Ensure userId is defined
         if (!userId) {
-            return res.status(400).json({ error: 'User ID is missing' });
+            res.status(400).json({ error: 'User ID is missing' });
+            return;
         }
-
-        // Find team by code
-        const team = await prisma.team.findUnique({
-            where: { teamCode: code }
-        });
-
+        const team = await prisma.team.findUnique({ where: { teamCode: code } });
         if (!team) {
-            return res.status(404).json({ error: 'Team not found' });
+            res.status(404).json({ error: 'Team not found' });
+            return;
         }
-
-        // Add player to team
         await prisma.playerTeam.create({
             data: {
                 playerId: userId,
                 teamId: team.id
             }
         });
-
         res.json({ message: 'Successfully joined team', team });
-
     } catch (error) {
         res.status(500).json({ error: 'Failed to join team' });
     }

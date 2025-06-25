@@ -10,3 +10,11 @@ declare global {
         }
     }
 }
+
+export type AuthenticatedRequest = Express.Request & {
+    user?: {
+        userId: string;
+        role: import('@prisma/client').Role;
+    };
+    body: any;
+};

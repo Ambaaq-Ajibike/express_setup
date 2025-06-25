@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import type { File as MulterFile } from 'multer';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../types/express';
 import prisma from '../config/prisma';
 
 /**
@@ -9,16 +9,18 @@ import prisma from '../config/prisma';
  *   description: Facility management endpoints
  */
 
-export const addFacility = async (req: Request, res: Response) => {
+export const addFacility = async (req: AuthenticatedRequest & { body: any }, res: Response): Promise<void> => {
     try {
         const { facilityName, address } = req.body;
         if (!facilityName || !address) {
-            return res.status(400).json({ error: 'Missing required fields: facilityName, address' });
+            res.status(400).json({ error: 'Missing required fields: facilityName, address' });
+            return;
         }
-        const images = req.files as MulterFile[] || [];
+        const images = req.files as Express.Multer.File[] || [];
         const pitchOwnerId = req.user?.userId;
         if (!pitchOwnerId) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
         }
         const imageUrls = images.map(img => img.path);
         const facility = await prisma.pitchOwnerFacility.create({
