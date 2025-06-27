@@ -46,17 +46,11 @@ export async function registerService({ firstName, lastName, email, password, im
             lastName,
             email,
             password: hashedPassword,
-            imageUrl: imageUrl || null,
-            role: role || Role.PLAYER
+            imageUrl: imageUrl,
+            role: role
         },
         select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            imageUrl: true,
-            role: true,
-            createdAt: true
+            id: true
         }
     });
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();

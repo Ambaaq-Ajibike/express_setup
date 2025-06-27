@@ -2,11 +2,6 @@ import { Request, Response } from 'express';
 import { loginService, registerService, verifyEmailService } from '../services/authService';
 import { AuthenticatedRequest } from '../types/express';
 
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { Role } from '@prisma/client';
-import prisma from '../config/prisma';
-
 /**
  * @swagger
  * tags:
@@ -15,7 +10,6 @@ import prisma from '../config/prisma';
  *   description: Authentication endpoints
  */
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const login = async (req: Request, res: Response) => {
     try {

@@ -20,6 +20,7 @@ enum AgeGroup {
   U16
   U17
   U18
+  Above
 }
 
 enum Sport {
@@ -46,19 +47,21 @@ enum Tier {
 
 model User {
   id           String      @id @default(uuid())
-  firstName    String      @map("first_name")
-  lastName     String      @map("last_name")
+  firstName    String      
+  lastName     String     
   email        String      @unique
   password     String
-  imageUrl     String?     @map("image_url")
+  imageUrl     String?    
   role         Role
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  emailVerified Boolean     @default(false) @map("email_verified")
+  createdAt    DateTime    @default(now()) 
+  updatedAt    DateTime    @updatedAt 
+  emailVerified Boolean     @default(false)
   // Relations
   pitchOwner   PitchOwner?
   parent       Parent?
-  coachedTeams Team[]      @relation("TeamCoach")
+  coach        Coach?
+  player       Player?
+  referee      Referee?
   otps         OTP[]
 
   @@index([email])
@@ -77,32 +80,50 @@ model OTP {
   @@index([expiry])
   @@map("otps")
 }
+model Coach{
+  id String @id @default(uuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+  coachTeam CoachTeam[]
+  @@map("coaches")
+}
 
+
+model CoachTeam {
+  coach    Coach @relation(fields: [coachId], references: [id])
+  coachId  String 
+  team      Team   @relation(fields: [teamId], references: [id])
+  teamId    String 
+  joinedAt  DateTime @default(now())
+
+  @@id([coachId, teamId])
+  @@map("coachTeams")
+}
 model Team {
   id        String   @id @default(uuid())
   name      String
-  teamCode  String   @unique @map("team_code")
-  coachId   String   @map("coach_id")
-  coach     User     @relation(fields: [coachId], references: [id], name: "TeamCoach")
+  teamCode  String   @unique
   players   PlayerTeam[]
-  ageGroup  AgeGroup @map("age_group")
+  coaches   CoachTeam[]
+  ageGroup  AgeGroup
   sport     Sport
   tier      Tier
   location  String?
 
-  @@index([coachId])
   @@index([teamCode])
   @@map("teams")
 }
 
 model Player {
   id        String   @id @default(uuid())
-  fullName  String   @map("full_name")
+  userId  String    @unique
+  user    User @relation(fields: [userId], references: [id])
   age       Int
   sport     Sport
-  imageUrl  String?  @map("image_url")
+  imageUrl  String?  
   code      String   @unique
   teams     PlayerTeam[]
+  child     Child?
 
   @@index([code])
   @@map("players")
@@ -110,14 +131,16 @@ model Player {
 
 model PlayerTeam {
   player    Player @relation(fields: [playerId], references: [id])
-  playerId  String @map("player_id")
+  playerId  String 
   team      Team   @relation(fields: [teamId], references: [id])
-  teamId    String @map("team_id")
-  joinedAt  DateTime @default(now()) @map("joined_at")
+  teamId    String 
+  joinedAt  DateTime @default(now()) 
 
   @@id([playerId, teamId])
-  @@map("player_teams")
+  @@map("playerTeams")
 }
+
+
 
 model Parent {
   id       String   @id @default(uuid())
@@ -130,47 +153,43 @@ model Parent {
 
 model Child {
   id       String   @id @default(uuid())
-  fullName String   @map("full_name")
-  age      Int
-  sport    Sport
-  imageUrl String?  @map("image_url")
-  code     String   @unique
-  parentId String   @map("parent_id")
+  playerId String @unique
+  player   Player @relation(fields: [playerId], references: [id])
+  parentId String   
   parent   Parent   @relation(fields: [parentId], references: [id])
 
   @@index([parentId])
-  @@index([code])
   @@map("children")
 }
 
-model RefereeCertification {
+model Referee{
   id           String   @id @default(uuid())
   certification String
-  certificates String[]
-  refereeId    String   @map("referee_id")
+  certificates String[]  
+  userId  String    @unique
+  user    User @relation(fields: [userId], references: [id])
 
-  @@map("referee_certifications")
+  @@map("referees")
 }
 
 model PitchOwner {
   id                     String   @id @default(uuid())
-  userId                 String   @unique @map("user_id")
+  userId                 String   @unique
   user                   User     @relation(fields: [userId], references: [id])
-  verificationDocumentUrl String?  @map("verification_document_url")
+  verificationDocumentUrl String?  
   facilities             PitchOwnerFacility[]
 
-  @@map("pitch_owners")
+  @@map("pitchOwners")
 }
 
 model PitchOwnerFacility {
   id           String   @id @default(uuid())
   name         String
   address      String
-  description  String?
   images       String[] 
-  pitchOwnerId String   @map("pitch_owner_id")
+  pitchOwnerId String   
   pitchOwner   PitchOwner @relation(fields: [pitchOwnerId], references: [id])
 
   @@index([pitchOwnerId])
-  @@map("pitch_owner_facilities")
+  @@map("pitchOwnerFacilities")
 }
