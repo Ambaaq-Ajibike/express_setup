@@ -5,30 +5,171 @@ import bcrypt from 'bcrypt';
 
 /**
  * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management endpoints
+ */
+
+/**
+ * @swagger
  * components:
  *   schemas:
  *     User:
  *       type: object
- *       required:
- *         - email
- *         - name
  *       properties:
  *         id:
  *           type: string
- *           description: The auto-generated id
+ *           format: uuid
+ *           description: The auto-generated user ID
+ *         firstName:
+ *           type: string
+ *           description: User's first name
+ *         lastName:
+ *           type: string
+ *           description: User's last name
  *         email:
  *           type: string
- *           description: User email
- *         name:
+ *           format: email
+ *           description: User's email address
+ *         imageUrl:
  *           type: string
- *           description: User name
+ *           nullable: true
+ *           description: User's profile image URL
+ *         role:
+ *           type: string
+ *           enum: [COACH, PLAYER, PARENT, REFEREE, PITCH_OWNER]
+ *           description: User's role
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: User creation timestamp
+ *         emailVerified:
+ *           type: boolean
+ *           description: Whether email is verified
  *       example:
- *         id: d5fE_asz
- *         email: john@example.com
- *         name: John Doe
+ *         id: "d5fE_asz"
+ *         firstName: "John"
+ *         lastName: "Doe"
+ *         email: "john@example.com"
+ *         imageUrl: "https://example.com/image.jpg"
+ *         role: "PLAYER"
+ *         createdAt: "2024-01-01T00:00:00Z"
+ *         emailVerified: false
+ *     CreateUserRequest:
+ *       type: object
+ *       required:
+ *         - firstName
+ *         - lastName
+ *         - email
+ *         - password
+ *       properties:
+ *         firstName:
+ *           type: string
+ *           description: User's first name
+ *           example: "John"
+ *         lastName:
+ *           type: string
+ *           description: User's last name
+ *           example: "Doe"
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's email address
+ *           example: "john@example.com"
+ *         password:
+ *           type: string
+ *           description: User's password
+ *           example: "password123"
+ *         imageUrl:
+ *           type: string
+ *           description: Optional profile image URL
+ *           example: "https://example.com/image.jpg"
+ *         role:
+ *           type: string
+ *           enum: [COACH, PLAYER, PARENT, REFEREE, PITCH_OWNER]
+ *           description: User's role
+ *           example: "PLAYER"
+ *     UsersResponse:
+ *       type: object
+ *       properties:
+ *         users:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/User'
+ *     CreateUserResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: "User created successfully"
+ *         user:
+ *           $ref: '#/components/schemas/User'
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         error:
+ *           type: string
+ *         details:
+ *           type: string
  */
 
-export const getUsers = async (req: Request, res: Response) => {
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve a list of all users in the system
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: List of users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UsersResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *   post:
+ *     summary: Create a new user
+ *     description: Create a new user account with the provided information
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserRequest'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateUserResponse'
+ *       400:
+ *         description: Bad request - missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Email already in use
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getUsers = async (req: Request, res: Response): Promise<void> => {
     try {
         const users = await prisma.user.findMany({
             select: {
